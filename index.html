@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>デジタル時計</title>
+<style>
+  /* 画面全体を暗い背景にして、時計を中央に配置する */
+  html, body {
+    height: 100%;
+    margin: 0;
+    background-color: #121212; /* 暗めの背景色 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+  }
+
+  /* 時計と日付をまとめて中央寄せするコンテナ */
+  .clock-container {
+    text-align: center;
+  }
+
+  /* 現在時刻を大きく表示する */
+  #time {
+    font-size: 6rem;
+    font-weight: bold;
+    color: #00e5ff; /* 明るく見やすい色 */
+    letter-spacing: 0.05em;
+    text-shadow: 0 0 20px rgba(0, 229, 255, 0.4); /* 少し光っているように見せる */
+  }
+
+  /* 日付を時刻の下に表示する */
+  #date {
+    margin-top: 0.5rem;
+    font-size: 1.8rem;
+    color: #e0e0e0; /* 明るいグレーで見やすく */
+  }
+
+  /* スマホなど画面が狭い場合は文字サイズを縮小する */
+  @media (max-width: 600px) {
+    #time {
+      font-size: 3rem;
+    }
+    #date {
+      font-size: 1.2rem;
+    }
+  }
+</style>
+</head>
+<body>
+
+  <div class="clock-container">
+    <!-- 現在時刻を表示する要素 -->
+    <div id="time">00:00:00</div>
+    <!-- 今日の日付を表示する要素 -->
+    <div id="date">----年--月--日(-)</div>
+  </div>
+
+  <script>
+    // 曜日を日本語で表すための配列
+    const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
+
+    // 数字を2桁のゼロ埋め文字列に変換する関数
+    function toTwoDigits(number) {
+      return String(number).padStart(2, "0");
+    }
+
+    // 現在時刻と日付を画面に反映する関数
+    function updateClock() {
+      const now = new Date();
+
+      // 時・分・秒を取得して「時:分:秒」の形式にする
+      const hours = toTwoDigits(now.getHours());
+      const minutes = toTwoDigits(now.getMinutes());
+      const seconds = toTwoDigits(now.getSeconds());
+      document.getElementById("time").textContent = `${hours}:${minutes}:${seconds}`;
+
+      // 年・月・日・曜日を取得して日本語形式にする
+      const year = now.getFullYear();
+      const month = now.getMonth() + 1;
+      const day = now.getDate();
+      const weekday = weekdays[now.getDay()];
+      document.getElementById("date").textContent = `${year}年${month}月${day}日(${weekday})`;
+    }
+
+    // ページ読み込み時に一度実行してから、1秒ごとに更新する
+    updateClock();
+    setInterval(updateClock, 1000);
+  </script>
+
+</body>
+</html>
