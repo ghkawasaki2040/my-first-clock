@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="theme-color" content="#EEF1F4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#141A22" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="chant counter">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<title>chant counter</title>
+<style>
+:root{
+  box-sizing:border-box;
+  --c-blue:#1F6FC5; --goal:#1F6FC5; --c-yellow:#D4A21A; --c-red:#C62828;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --paper:#EEF1F4; --sheet:#FFFFFF; --ink:#1D2A3A; --sub:#5F6B7A; --rule:#D5DBE2;
+  --fill:#1F6F78; --fill-soft:#D6E9EA; --pace:#B7862B; --sat:#2D5EA8; --sun:#B03A3A; --empty:#E3E6EA;
+  --bg-low:#E4E6E9; --bg-b:#D2E3FA; --bg-y:#FBEEBE; --bg-r:#F8D2D0;
+}
+@media (prefers-color-scheme:dark){:root{
+  --paper:#141A22; --sheet:#1C242F; --ink:#E6EBF1; --sub:#9AA6B4; --rule:#2C3643;
+  --fill:#5DB7BF; --fill-soft:#1E3A3E; --pace:#E0B45C; --sat:#86A9E6; --sun:#EB8C8C; --empty:#2A323D;
+  --bg-low:#2E333A; --bg-b:#1E3A5F; --bg-y:#4A3E14; --bg-r:#5A2222; --goal:#7FB2F0;}}
+*,*::before,*::after{box-sizing:inherit}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP",system-ui,sans-serif;
+  font-size:15px;line-height:1.45}
+.num{font-variant-numeric:tabular-nums}
+.wrap{max-width:520px;margin:0 auto;padding:10px 12px 90px}
+h1{font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;font-weight:600;
+  font-size:20px;letter-spacing:.04em;margin:2px 2px 6px}
+.panel{background:var(--sheet);border:1px solid var(--rule);border-radius:12px;padding:8px 12px;margin-bottom:8px}
+.facts{display:grid;grid-template-columns:auto 1fr auto 1fr;gap:0 8px;align-items:baseline}
+.facts dt{color:var(--sub);font-size:13px}
+.facts dd{margin:0;font-weight:600}
+.facts input[type=date]{font:inherit;font-size:16px;font-weight:600;color:var(--ink);background:var(--paper);
+  border:1px solid var(--rule);border-radius:6px;padding:1px 4px;min-height:30px;max-width:9.2em}
+.target{display:flex;align-items:baseline;gap:2px}
+.target input{width:3.4em;text-align:left !important;font:inherit;font-size:16px;font-weight:600;color:var(--ink);background:transparent;
+  border:0;border-bottom:1px dashed var(--rule);padding:0 2px;text-align:right}
+.plan{display:grid;grid-template-columns:auto repeat(6,1fr);align-items:end;gap:4px;margin-top:8px;padding-top:8px;border-top:1px solid var(--rule)}
+.plan .ph{font-size:11px;line-height:1.2;color:var(--sub);text-align:center;padding-bottom:6px}
+.plan label{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12px;color:var(--sub);white-space:nowrap}
+.plan select{font:inherit;font-size:16px;color:var(--ink);background:var(--paper);border:1px solid var(--rule);border-radius:6px;padding:4px 0;width:100%;text-align:center;text-align-last:center;-webkit-appearance:none;appearance:none}
+/* 達成度グラフ */
+.gauge-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 14px}
+.gauge-head b small{font-size:14px;font-weight:600}
+.gauge-head b span{font-size:inherit;color:inherit}
+.gauge-head em{font-style:normal;font-size:14px;font-weight:600;color:var(--goal)}
+.gauge-head #pct{margin-left:auto}
+.gauge-head b{font-size:22px;font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;font-weight:600}
+.gauge-head span{font-size:13px;color:var(--sub)}
+.track{position:relative;display:flex;gap:3px;height:22px;margin:6px 0 3px;padding:2px;border:2px dashed var(--rule);border-radius:6px}
+.seg{position:relative;height:100%;background:var(--empty);border-radius:3px;overflow:hidden}
+.seg i{position:absolute;inset:0 auto 0 0;width:0;transition:width .5s ease-out}
+.seg.s1 i{background:var(--c-blue)} .seg.s2 i{background:var(--c-yellow)} .seg.s3 i{background:var(--c-red)}
+.seg.s4 i{background:linear-gradient(135deg,#F4DC8A,#C99A2E 55%,#E9C865)}
+.seg b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;
+  text-shadow:0 0 2px rgba(120,80,0,.8);opacity:0;transition:opacity .4s}
+.seg.done b{opacity:1}
+.track u{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--ink);left:0;opacity:.55}
+.scale{display:flex;justify-content:space-between;font-size:12px;color:var(--sub)}
+.pace{font-size:12px;color:var(--sub)}
+.pace::before{content:"";display:inline-block;width:2px;height:10px;background:var(--ink);opacity:.55;vertical-align:middle;margin-right:4px}
+/* 表 */
+.tablebox{background:var(--sheet);border:1px solid var(--rule);border-radius:12px;overflow:clip}
+table{width:100%;border-collapse:collapse;background:var(--sheet)}
+thead th{position:sticky;top:env(safe-area-inset-top,0px);z-index:2;background:var(--sheet);font-size:12px;font-weight:500;color:var(--sub);
+  text-align:right;padding:5px 8px;border-bottom:1px solid var(--rule)}
+thead th:first-child{text-align:left}
+td{padding:2px 8px;border-bottom:1px solid var(--rule);text-align:right;height:34px}
+td:first-child{text-align:left;white-space:nowrap}
+tr.today td{background:var(--fill-soft)}
+tr.month td{height:auto;padding:4px 8px;font-size:13px;text-align:left;font-weight:600;border-bottom:1px solid var(--rule);background:var(--paper)}
+.dw{font-size:12px;color:var(--sub);margin-left:3px}
+.w5 .dw{color:var(--sat)} .w6 .dw,.hol .dw{color:var(--sun)}
+td select{font:inherit;font-size:16px;color:var(--ink);background:var(--paper);border:1px solid var(--rule);
+  border-radius:6px;padding:1px 2px;width:4.6em;text-align:right}
+td select.empty{color:var(--sub)}
+.tot{color:var(--sub)}
+td.tot.low{background:var(--bg-low)} td.tot.ob{background:var(--bg-b);color:var(--ink)}
+td.tot.oy{background:var(--bg-y);color:var(--ink)} td.tot.or{background:var(--bg-r);color:var(--ink)}
+.legend{display:flex;flex-wrap:wrap;gap:4px 8px;font-size:11px;color:var(--sub);padding:8px 10px;border-bottom:1px solid var(--rule)}
+#dailyPace{margin-left:0}
+#dailyPace::before{display:none}
+.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:3px;vertical-align:-1px;background:var(--sw)}
+select:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--fill);outline-offset:2px}
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:5;display:flex;gap:8px;justify-content:center;
+  padding:8px 12px calc(8px + env(safe-area-inset-bottom,0px));background:var(--paper);border-top:1px solid var(--rule)}
+.bar button{font:inherit;font-size:14px;border:1px solid var(--rule);background:var(--sheet);color:var(--ink);border-radius:18px;padding:6px 14px}
+.bar button.main{background:var(--ink);color:var(--paper);border-color:var(--ink);font-weight:600}
+.note{font-size:12px;color:var(--sub);text-align:center;margin-top:12px}
+@media (prefers-reduced-motion:reduce){.seg i,.seg b{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>chant counter</h1>
+
+  <section class="panel">
+    <dl class="facts num">
+      <dt>start</dt><dd><input id="start" type="date" aria-label="開始日"></dd>
+      <dt>target</dt><dd class="target"><input id="target" type="number" inputmode="numeric" min="1" aria-label="目標（万）">万</dd>
+      <dt>end</dt><dd><input id="end" type="date" aria-label="終了日"></dd>
+      <dt>countdown</dt><dd id="countdown"></dd>
+    </dl>
+    <div class="plan" id="plan"></div>
+  </section>
+
+  <section class="panel" aria-label="達成度">
+    <div class="gauge-head num"><b><small>現在：</small><span id="totalMan">0</span></b><em id="todayGoal"></em><span id="pct">0%</span></div>
+    <div class="track" id="track">
+      <div class="seg s1" style="flex:30"><i></i></div><div class="seg s2" style="flex:30"><i></i></div>
+      <div class="seg s3" style="flex:30"><i></i></div><div class="seg s4" style="flex:10"><i></i><b>★</b></div>
+      <u id="paceMark"></u></div>
+    <div class="scale num"><span>0</span><span class="pace" id="paceText"></span><span id="scaleMax"></span></div>
+  </section>
+
+  <div class="tablebox">
+  <div class="legend num"><span style="--sw:var(--bg-low)">30%以上遅れ</span><span style="--sw:var(--bg-b)">10%超</span><span style="--sw:var(--bg-y)">20%超</span><span style="--sw:var(--bg-r)">30%超</span><span id="dailyPace"></span></div>
+  <table class="num">
+    <thead><tr><th>calender</th><th>time</th><th>count</th><th>total</th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+  </div>
+  <p class="note">記録はこのスマホの中に保存されます。機種変更の前に「バックアップ」で保存してください。</p>
+</div>
+
+<div class="bar">
+  <button class="main" id="todayBtn">今日</button>
+  <button id="exportBtn">バックアップ</button>
+  <button id="importBtn">復元</button>
+  <input id="importFile" type="file" accept="application/json,.json" hidden>
+</div>
+
+<script>
+const CFG = {"start": "2026-09-29", "end": "2027-01-31", "targetMan": 200, "perHour": 3400, "plan": {"mon": 5, "tue": 5, "wed": 5, "thu": 5, "fri": 10, "weh": 2}, "hours": [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0, 9.5, 10.0], "times": [{"m": 20, "label": "20m", "count": 1150}, {"m": 30, "label": "30m", "count": 1700}, {"m": 40, "label": "40m", "count": 2300}, {"m": 60, "label": "1h", "count": 3400}, {"m": 90, "label": "1.5h", "count": 5100}, {"m": 120, "label": "2h", "count": 6800}, {"m": 150, "label": "2.5h", "count": 8500}, {"m": 180, "label": "3h", "count": 10200}, {"m": 210, "label": "3.5h", "count": 11900}, {"m": 240, "label": "4h", "count": 13600}, {"m": 270, "label": "4.5h", "count": 15300}, {"m": 300, "label": "5h", "count": 17000}, {"m": 330, "label": "5.5h", "count": 18700}, {"m": 360, "label": "6h", "count": 20400}, {"m": 390, "label": "6.5h", "count": 22100}, {"m": 420, "label": "7h", "count": 23800}, {"m": 450, "label": "7.5h", "count": 25500}, {"m": 480, "label": "8h", "count": 27200}, {"m": 510, "label": "8.5h", "count": 28900}, {"m": 540, "label": "9h", "count": 30600}, {"m": 570, "label": "9.5h", "count": 32300}, {"m": 600, "label": "10h", "count": 34000}, {"m": 660, "label": "11h", "count": 37400}]};
+const KEY = "chant-counter-v1";
+const WD = ["月","火","水","木","金","土","日"];
+const PLAN_ITEMS = [["mon","月"],["tue","火"],["wed","水"],["thu","木"],["fri","金"],["weh","土日祝"]];
+const fmt = n => n.toLocaleString("ja-JP");
+const hLabel = h => h.toFixed(1);
+
+// ---- 保存 ----
+let state = { entries:{}, plan:{...CFG.plan}, targetMan: CFG.targetMan, start: CFG.start, end: CFG.end };
+try { const s = JSON.parse(localStorage.getItem(KEY)); if (s) state = { ...state, ...s, plan:{...CFG.plan, ...(s.plan||{})} }; } catch(e) {}
+// 旧版（時間で保存）→ 分で保存に変換
+function toMinutes(s){ if (s.unit !== "m") { const e = {}; Object.entries(s.entries||{}).forEach(([k,v]) => e[k] = Math.round(v*60)); s.entries = e; s.unit = "m"; } return s; }
+state = toMinutes(state);
+const TIME = {}; CFG.times.forEach(t => TIME[t.m] = t);
+const countOf = m => TIME[m] ? TIME[m].count : Math.round(m/60*CFG.perHour);
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){ alert("保存できませんでした。プライベートブラウズを解除してください。"); } }
+if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(()=>{});
+
+// ---- 日付 ----
+const pad = n => String(n).padStart(2,"0");
+const iso = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const parse = s => new Date(Number(s.slice(0,4)), Number(s.slice(5,7))-1, Number(s.slice(8,10)));
+const todayISO = iso(new Date());
+const md = s => Number(s.slice(5,7))+"/"+Number(s.slice(8));
+const dayDiff = (a,b) => Math.round((parse(b) - parse(a))/86400000);
+const wdMon = d => (d.getDay()+6)%7;           // 月=0 … 日=6
+
+// ---- 日本の祝日（自動計算）----
+const holCache = {};
+function holidaysOf(y){
+  if (holCache[y]) return holCache[y];
+  const h = {};
+  const add = (m,d,n) => { h[y+"-"+pad(m)+"-"+pad(d)] = n; };
+  const nthMon = (m,n) => { const f = new Date(y,m-1,1).getDay(); return 1 + ((8-f)%7) + (n-1)*7; };
+  add(1,1,"元日"); add(1,nthMon(1,2),"成人の日"); add(2,11,"建国記念の日"); add(2,23,"天皇誕生日");
+  add(3,Math.floor(20.8431+0.242194*(y-1980)-Math.floor((y-1980)/4)),"春分の日");
+  add(4,29,"昭和の日"); add(5,3,"憲法記念日"); add(5,4,"みどりの日"); add(5,5,"こどもの日");
+  add(7,nthMon(7,3),"海の日"); add(8,11,"山の日"); add(9,nthMon(9,3),"敬老の日");
+  add(9,Math.floor(23.2488+0.242194*(y-1980)-Math.floor((y-1980)/4)),"秋分の日");
+  add(10,nthMon(10,2),"スポーツの日"); add(11,3,"文化の日"); add(11,23,"勤労感謝の日");
+  // 国民の休日（祝日に挟まれた平日）
+  Object.keys(h).forEach(k => { const d = parse(k); d.setDate(d.getDate()+2); const k2 = iso(d);
+    if (h[k2]) { const mid = parse(k); mid.setDate(mid.getDate()+1); const km = iso(mid);
+      if (!h[km] && mid.getDay() !== 0) h[km] = "国民の休日"; } });
+  // 振替休日
+  Object.keys(h).sort().forEach(k => { const d = parse(k); if (d.getDay() === 0) {
+    do { d.setDate(d.getDate()+1); } while (h[iso(d)]); h[iso(d)] = "振替休日"; } });
+  return holCache[y] = h;
+}
+const holidayName = s => holidaysOf(Number(s.slice(0,4)))[s] || "";
+
+// ---- 期間の日付リスト ----
+let DAYS = [];
+function makeDays(){
+  DAYS = [];
+  const d = parse(state.start), e = parse(state.end);
+  while (d <= e) { const s = iso(d); DAYS.push([s, wdMon(d), holidayName(s)]); d.setDate(d.getDate()+1); }
+}
+const planKey = d => (d[2] || d[1] >= 5) ? "weh" : ["mon","tue","wed","thu","fri"][d[1]];
+
+// ---- 上部の設定 ----
+const startIn = document.getElementById("start"), endIn = document.getElementById("end");
+startIn.value = state.start; endIn.value = state.end;
+function changePeriod(){
+  const s = startIn.value, e = endIn.value;
+  if (!s || !e) { startIn.value = state.start; endIn.value = state.end; return; }
+  if (s > e) { alert("start は end より前の日付にしてください。"); startIn.value = state.start; endIn.value = state.end; return; }
+  if (dayDiff(s,e) > 730) { alert("期間は2年以内にしてください。"); startIn.value = state.start; endIn.value = state.end; return; }
+  state.start = s; state.end = e; save(); buildRows(); refresh(); jumpToday();
+}
+startIn.addEventListener("change", changePeriod);
+endIn.addEventListener("change", changePeriod);
+
+const tgt = document.getElementById("target");
+tgt.value = state.targetMan;
+tgt.addEventListener("change", () => { const v = Number(tgt.value); if (v > 0){ state.targetMan = v; save(); refresh(); } else tgt.value = state.targetMan; });
+
+document.getElementById("plan").innerHTML = '<span class="ph">目標<br>時間</span>' + PLAN_ITEMS.map(([k,l]) =>
+  `<label>${l}<select data-plan="${k}" aria-label="${l}の予定時間">${CFG.hours.map(h=>`<option value="${h}">${hLabel(h)}</option>`).join("")}</select></label>`).join("");
+document.querySelectorAll("select[data-plan]").forEach(s => {
+  s.value = String(state.plan[s.dataset.plan]);
+  s.addEventListener("change", () => { state.plan[s.dataset.plan] = Number(s.value); save(); refresh(); });
+});
+
+// ---- 表 ----
+const hourOpts = '<option value="">—</option>' + CFG.times.map(t => `<option value="${t.m}">${t.label}</option>`).join("");
+function buildRows(){
+  makeDays();
+  let html = "", lastMonth = "";
+  DAYS.forEach(([date, wd, hol]) => {
+    const mk = date.slice(0,7);
+    if (mk !== lastMonth){ lastMonth = mk; html += `<tr class="month"><td colspan="4">${Number(mk.slice(0,4))}年${Number(mk.slice(5))}月</td></tr>`; }
+    const cls = hol ? "hol" : wd===5 ? "w5" : wd===6 ? "w6" : "";
+    html += `<tr id="r${date}" class="${date===todayISO?"today":""}">
+      <td class="${cls}">${md(date)}<span class="dw">${WD[wd]}${hol?"祝":""}</span></td>
+      <td><select data-date="${date}" aria-label="${md(date)}の時間">${hourOpts}</select></td>
+      <td id="c${date}"></td><td class="tot" id="t${date}"></td></tr>`;
+  });
+  document.getElementById("rows").innerHTML = html;
+}
+
+// ---- 計算・表示 ----
+function refresh(){
+  let total = 0, planToDate = 0, planAll = 0;
+  const target = state.targetMan * 10000;
+  const span = Math.max(1, dayDiff(state.start, state.end));      // 例：2,000,000 ÷ 124日
+  const daily = target / span;
+  DAYS.forEach((d, i) => {
+    const date = d[0], h = state.entries[date] || 0, c = h ? countOf(h) : 0;
+    total += c;
+    const p = state.plan[planKey(d)] * CFG.perHour;
+    planAll += p; if (date <= todayISO) planToDate += p;
+    const sel = document.querySelector(`select[data-date="${date}"]`);
+    sel.value = h ? String(h) : ""; sel.classList.toggle("empty", !h);
+    document.getElementById("c"+date).textContent = h ? fmt(c) : "";
+    const tc = document.getElementById("t"+date);
+    tc.className = "tot";
+    if (date <= todayISO) {                                   // 今日より後は空白
+      tc.textContent = fmt(total);
+      const r = total / (daily * (i+1));                      // 目標ペースとの比
+      tc.classList.add(r < 0.7 ? "low" : r > 1.3 ? "or" : r > 1.2 ? "oy" : r > 1.1 ? "ob" : "x");
+    } else tc.textContent = "";
+  });
+  const pct = total / target * 100;
+  document.getElementById("totalMan").textContent = fmt(total);
+  document.getElementById("pct").textContent = pct.toFixed(1) + "%";
+  [[0,30],[30,60],[60,90],[90,100]].forEach(([a,b], k) => {
+    const seg = document.querySelectorAll("#track .seg")[k];
+    const w = Math.max(0, Math.min(1, (pct - a) / (b - a)));
+    seg.querySelector("i").style.width = (w*100) + "%";
+    seg.classList.toggle("done", w >= 1);
+  });
+  const td = [todayISO, wdMon(new Date()), holidayName(todayISO)];
+  const th = state.plan[planKey(td)];
+  document.getElementById("todayGoal").textContent = "今日の目標→" + String(th).replace(/\.0$/,"") + "h " + fmt(th * CFG.perHour);
+  document.getElementById("dailyPace").textContent = "1日の目標 " + fmt(Math.round(daily));
+  document.getElementById("paceMark").style.left = Math.min(100, planToDate/target*100) + "%";
+  document.getElementById("scaleMax").textContent = state.targetMan + "万";
+  document.getElementById("paceText").textContent =
+    "予定ペース " + (planToDate/10000).toFixed(1) + "万／全体 " + (planAll/10000).toFixed(1) + "万";
+  document.getElementById("countdown").textContent = Math.max(0, dayDiff(todayISO, state.end)) + " day";
+}
+document.getElementById("rows").addEventListener("change", e => {
+  const s = e.target.closest("select[data-date]"); if (!s) return;
+  if (s.value) state.entries[s.dataset.date] = Number(s.value); else delete state.entries[s.dataset.date];
+  save(); refresh();
+});
+
+// ---- 今日へ移動 ----
+function jumpToday(){
+  if (!DAYS.length) return;
+  const first = DAYS[0][0], last = DAYS[DAYS.length-1][0];
+  const t = todayISO < first ? first : todayISO > last ? last : todayISO;
+  const row = document.getElementById("r"+t);
+  if (row) row.scrollIntoView({block:"center"});
+}
+document.getElementById("todayBtn").addEventListener("click", jumpToday);
+
+// ---- バックアップ／復元 ----
+document.getElementById("exportBtn").addEventListener("click", async () => {
+  const text = JSON.stringify(state);
+  const name = "chant_counter_backup_" + todayISO + ".json";
+  const file = new File([text], name, {type:"application/json"});
+  if (navigator.canShare && navigator.canShare({files:[file]})) {
+    try { await navigator.share({files:[file], title:name}); return; } catch(e) { if (e.name === "AbortError") return; }
+  }
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(file); a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+});
+const fileIn = document.getElementById("importFile");
+document.getElementById("importBtn").addEventListener("click", () => fileIn.click());
+fileIn.addEventListener("change", async () => {
+  const f = fileIn.files[0]; if (!f) return;
+  try {
+    const s = JSON.parse(await f.text());
+    if (!s || typeof s.entries !== "object") throw new Error();
+    if (!confirm("バックアップの内容で今の記録を置き換えます。よろしいですか？")) return;
+    toMinutes(s);
+    state = { unit:"m", entries:s.entries, plan:{...CFG.plan, ...(s.plan||{})}, targetMan: s.targetMan || CFG.targetMan,
+              start: s.start || state.start, end: s.end || state.end };
+    save(); tgt.value = state.targetMan; startIn.value = state.start; endIn.value = state.end;
+    document.querySelectorAll("select[data-plan]").forEach(x => x.value = String(state.plan[x.dataset.plan]));
+    buildRows(); refresh(); jumpToday(); alert("復元しました。");
+  } catch(e) { alert("このファイルは読み込めません。バックアップで保存した .json ファイルを選んでください。"); }
+  fileIn.value = "";
+});
+
+buildRows();
+refresh();
+requestAnimationFrame(jumpToday);
+
+// ---- オフライン対応 ----
+if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js");
+</script>
+</body>
+</html>
